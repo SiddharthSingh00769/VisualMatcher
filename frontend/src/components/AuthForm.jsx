@@ -30,9 +30,9 @@ const AuthForm = ({ isLogin, onAuthSuccess }) => {
       if (response.status === 200 || response.status === 201) {
         setMessage(isLogin ? `Welcome back, ${response.data.username}!` : `Account created for ${response.data.username}!`);
         setFormData({ username: '', email: '', password: '' });
-        if (isLogin) {
-          onAuthSuccess();
-        }
+        
+        // This change ensures redirection happens for both successful login and sign-up
+        onAuthSuccess(); 
       }
     } catch (error) {
       if (error.response) {
