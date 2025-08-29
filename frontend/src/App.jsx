@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import AuthPage from './pages/AuthPage.jsx';
 import HomePage from './pages/HomePage.jsx';
-import ProductsPage from './pages/ProductsPage.jsx'; // Import the new ProductsPage
+import ProductsPage from './pages/ProductsPage.jsx';
 import Header from './components/Header.jsx';
 import axios from 'axios';
 import './index.css';
 
-// The main App component handles routing
 const App = () => {
   // State to determine if the user is authenticated
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -15,17 +14,17 @@ const App = () => {
   const [isAuthReady, setIsAuthReady] = useState(false);
   const navigate = useNavigate();
 
-  // Function to handle a successful authentication (e.g., after login)
   const handleAuthSuccess = () => {
     setIsAuthenticated(true);
-    navigate('/products');
+    navigate('/products'); 
   };
 
-  // Use a useEffect hook to check for authentication status on component mount
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/auth/checkAuth', { withCredentials: true });
+        const response = await axios.get('http://localhost:5000/api/auth/checkAuth', {
+          withCredentials: true, // This is crucial for sending the cookie
+        });
         
         if (response.status === 200) {
           setIsAuthenticated(true);
@@ -43,7 +42,6 @@ const App = () => {
     checkAuthStatus();
   }, []);
 
-  // Display a loading screen while we check the auth status
   if (!isAuthReady) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4 font-inter text-gray-800 antialiased">
@@ -58,6 +56,7 @@ const App = () => {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/auth" element={<AuthPage onAuthSuccess={handleAuthSuccess} />} />
+        {/* We will add the products page route here later */}
         <Route path="/products" element={isAuthenticated ? <ProductsPage /> : <AuthPage onAuthSuccess={handleAuthSuccess} />} />
       </Routes>
     </div>

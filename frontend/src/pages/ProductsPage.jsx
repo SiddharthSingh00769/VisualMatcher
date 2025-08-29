@@ -1,129 +1,176 @@
-// File: frontend/src/pages/ProductsPage.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import ProductCard from '../components/ProductCard.jsx';
 
 const ProductsPage = () => {
-    // State to store the list of products
-    const [products, setProducts] = useState([]);
-    // State to manage loading status for the initial product fetch
-    const [loading, setLoading] = useState(true);
-    // State to handle any errors during the initial fetch
-    const [error, setError] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [imageUrl, setImageUrl] = useState('');
+  const [searchImage, setSearchImage] = useState(null);
+  const [searchMode, setSearchMode] = useState(false);
+  const [file, setFile] = useState(null);
 
-    // New state for search functionality
-    const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState([]);
-    const [isSearching, setIsSearching] = useState(false);
-    const [searchError, setSearchError] = useState(null);
+  const fetchProducts = async () => {
+    setLoading(true);
+    setError(null);
+    setSearchMode(false);
+    try {
+      const response = await axios.get('http://localhost:5000/api/products');
+      setProducts(response.data);
+    } catch (err) {
+      console.error('Error fetching products:', err);
+      setError('Failed to load products. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // useEffect hook to fetch all products from the backend on component mount
-    useEffect(() => {
-        const fetchProducts = async () => {
-            try {
-                const response = await axios.get('http://localhost:5000/api/products');
-                setProducts(response.data);
-            } catch (err) {
-                console.error('Error fetching products:', err);
-                setError('Failed to load products. Please try again later.');
-            } finally {
-                setLoading(false);
-            }
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const handleSearch = async () => {
+    setLoading(true);
+    setError(null);
+    setSearchMode(true);
+    try {
+      let imageToSend;
+      if (file) {
+        // Create a data URL from the file
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onloadend = async () => {
+          imageToSend = reader.result;
+          await sendSearchRequest(imageToSend);
         };
-
-        fetchProducts();
-    }, []);
-
-    // Function to handle the visual search
-    const handleSearch = async () => {
-        if (!searchQuery) {
-            setSearchError('Please enter an image URL.');
-            return;
-        }
-        
-        setIsSearching(true);
-        setSearchError(null);
-
-        try {
-            const response = await axios.post('http://localhost:5000/api/search', { image: searchQuery }, {
-                withCredentials: true,
-            });
-            setSearchResults(response.data.similarProducts);
-        } catch (err) {
-            console.error('Error during search:', err);
-            setSearchError('Failed to perform search. Please try again.');
-        } finally {
-            setIsSearching(false);
-        }
-    };
-
-    // Function to clear search results and show all products
-    const handleClearSearch = () => {
-        setSearchQuery('');
-        setSearchResults([]);
-        setSearchError(null);
-    };
-
-    if (loading) {
-        return (
-            <div className="flex min-h-[calc(100vh-6rem)] items-center justify-center">
-                <p className="text-xl text-gray-600">Loading products...</p>
-            </div>
-        );
+      } else if (imageUrl) {
+        imageToSend = imageUrl;
+        await sendSearchRequest(imageToSend);
+      }
+    } catch (err) {
+      console.error('Error during search setup:', err);
+      setError('Failed to initiate search. Please check your image source.');
+      setLoading(false);
     }
-
-    if (error) {
-        return (
-            <div className="flex min-h-[calc(100vh-6rem)] items-center justify-center">
-                <p className="text-xl text-red-500">{error}</p>
-            </div>
-        );
+  };
+  
+  const sendSearchRequest = async (image) => {
+    try {
+      const response = await axios.post(
+        'http://5000/api/products/search',
+        { image },
+        { withCredentials: true }
+      );
+      setProducts(response.data.similarProducts);
+    } catch (err) {
+      console.error('Error fetching search results:', err);
+      setError('Failed to fetch search results. Please try again later.');
+    } finally {
+      setLoading(false);
     }
-    
-    // Determine which list to display
-    const currentProducts = searchResults.length > 0 ? searchResults : products;
-    const title = searchResults.length > 0 ? 'Search Results' : 'All Products';
+  };
 
-    return (
-        <div className="bg-gray-100 p-8 min-h-[calc(100vh-6rem)]">
-            <div className="flex flex-col items-center justify-center mb-8">
-                <div className="w-full max-w-lg flex flex-col md:flex-row gap-4">
-                    <input
-                        type="url"
-                        placeholder="Enter image URL..."
-                        className="flex-grow rounded-lg border-2 border-gray-300 p-3 transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                    <button
-                        onClick={handleSearch}
-                        className="rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
-                        disabled={isSearching}
-                    >
-                        {isSearching ? 'Searching...' : 'Search'}
-                    </button>
-                    {searchResults.length > 0 && (
-                        <button
-                            onClick={handleClearSearch}
-                            className="rounded-lg bg-gray-400 px-6 py-3 font-semibold text-white transition hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50"
-                        >
-                            Clear
-                        </button>
-                    )}
-                </div>
-                {searchError && (
-                    <p className="mt-4 text-red-500">{searchError}</p>
-                )}
+  const handleClear = () => {
+    fetchProducts();
+    setImageUrl('');
+    setSearchImage(null);
+    setFile(null);
+    setSearchMode(false);
+  };
+
+  const handleFileChange = (e) => {
+    const uploadedFile = e.target.files[0];
+    if (uploadedFile) {
+      setFile(uploadedFile);
+      setSearchImage(URL.createObjectURL(uploadedFile));
+      setImageUrl('');
+    }
+  };
+
+  return (
+    <div className="bg-gradient-to-r from-indigo-900 to-slate-900 min-h-screen">
+      <div className="container mx-auto p-4 md:p-8">
+        <h1 className="mb-8 text-center text-3xl font-bold text-gray-100 md:text-4xl">
+          {searchMode ? 'Search Results' : 'All Products'}
+        </h1>
+
+        <div className="flex flex-col items-center justify-center space-y-4 mb-8">
+          <div className="w-full max-w-2xl flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+            <input
+              type="text"
+              className="flex-grow rounded-lg border-2 border-gray-700 bg-gray-800 text-gray-100 p-3 transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              placeholder="Enter image URL"
+              value={imageUrl}
+              onChange={(e) => {
+                setImageUrl(e.target.value);
+                setFile(null);
+                setSearchImage(e.target.value);
+              }}
+            />
+            <div className="relative w-full md:w-auto">
+              <input
+                type="file"
+                onChange={handleFileChange}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                accept="image/*"
+              />
+              <div className="w-full rounded-lg bg-gray-700 px-6 py-3 text-center font-semibold text-gray-100 transition hover:bg-gray-600">
+                Choose File
+              </div>
             </div>
-            
-            <h1 className="text-4xl font-bold text-center text-gray-800 mb-8">{title}</h1>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {currentProducts.map((product) => (
-                    <ProductCard key={product._id} product={product} />
-                ))}
-            </div>
+            <button
+              onClick={handleSearch}
+              className="cursor-pointer w-full md:w-auto rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
+              disabled={loading || (!imageUrl && !file)}
+            >
+              {loading ? 'Searching...' : 'Search'}
+            </button>
+          </div>
+          {searchMode && (
+            <button
+              onClick={handleClear}
+              className="rounded-lg bg-gray-500 px-4 py-2 font-semibold text-white transition hover:bg-gray-600"
+            >
+              Clear
+            </button>
+          )}
         </div>
-    );
+
+        {searchImage && (
+          <div className="mb-8 flex flex-col items-center justify-center p-4 rounded-lg shadow-inner bg-gray-800">
+            <h2 className="text-xl font-semibold mb-4 text-gray-300">Searching with this image:</h2>
+            <div className="w-48 h-48 md:w-64 md:h-64 overflow-hidden rounded-lg shadow-lg">
+              <img src={searchImage} alt="Search Query" className="w-full h-full object-cover"/>
+            </div>
+          </div>
+        )}
+
+        {loading && (
+          <div className="flex justify-center items-center h-48">
+            <p className="text-xl font-medium text-gray-400">Loading products...</p>
+          </div>
+        )}
+        {error && (
+          <div className="flex justify-center items-center h-48">
+            <p className="text-xl text-red-400">{error}</p>
+          </div>
+        )}
+        {!loading && !error && products.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {products.map((product) => (
+              <ProductCard key={product._id} product={product} />
+            ))}
+          </div>
+        )}
+        {!loading && !error && products.length === 0 && searchMode && (
+          <div className="flex justify-center items-center h-48">
+            <p className="text-xl font-medium text-gray-400">No similar products found.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default ProductsPage;
