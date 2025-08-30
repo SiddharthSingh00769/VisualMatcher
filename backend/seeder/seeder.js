@@ -8,7 +8,8 @@ import { fileURLToPath } from 'url';
 import Product from '../models/Product.js';
 import User from '../models/User.js';
 import connectDB from '../db/connect.js';
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getVectorFromImage, keywordMapping } from '../controllers/productController.js';
+
 
 // Get the current directory name
 const __filename = fileURLToPath(import.meta.url);
@@ -19,330 +20,297 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 // Get the MongoDB URI and API key from the environment variables
 const MONGO_URI = process.env.MONGO_URI;
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
-
-// Initialize the Generative AI client
-const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
-// Function to generate a feature vector using the Gemini API
-const getVectorFromImage = async (imageUrl) => {
-    const prompt = 'Please describe this product image in great detail, including colors, textures, materials, and any key features, in a single sentence.';
-    
-    try {
-        const imagePart = {
-            inlineData: {
-                data: Buffer.from(imageUrl).toString('base64'),
-                mimeType: 'text/uri-list'
-            }
-        };
-
-        const result = await model.generateContent([prompt, imagePart]);
-        const response = await result.response;
-        const text = response.text();
-
-        // This is where we create a simple, repeatable vector from the text.
-        // A real-world application would use an embedding model, but this
-        // simulates the process for a working demo.
-        const vector = text.split(' ').map(word => word.length);
-        
-        return vector;
-    } catch (err) {
-        console.error('Error generating vector from image:', err);
-        return []; // Return an empty array on failure
-    }
-};
 
 // Sample product data
 const sampleProducts = [
-  {
-    name: 'Denim Jacket',
-    category: 'Apparel',
-    description: 'Classic blue denim jacket with a relaxed fit.',
-    imageUrl: 'https://plus.unsplash.com/premium_photo-1698260795321-4d56527a3f32?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Minimalist T-Shirt',
-    category: 'Apparel',
-    description: 'A simple white tee, comfortable and versatile.',
-    imageUrl: 'https://images.unsplash.com/photo-1659592987637-c766206e72b8?q=80&w=764&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Leather Boots',
-    category: 'Shoes',
-    description: 'Stylish leather boots, perfect for autumn and winter.',
-    imageUrl: 'https://images.unsplash.com/photo-1599012307605-23a0ebe4d321?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'White Sneakers',
-    category: 'Shoes',
-    description: 'Clean white sneakers that go with any casual outfit.',
-    imageUrl: 'https://images.unsplash.com/photo-1600269452121-4f2416e55c28?q=80&w=765&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Over-Ear Headphones',
-    category: 'Electronics',
-    description: 'High-quality headphones for studio-grade audio.',
-    imageUrl: 'https://images.unsplash.com/photo-1638803782506-d975a6809f43?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Smart Watch',
-    category: 'Electronics',
-    description: 'A stylish smart watch with health tracking features.',
-    imageUrl: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?q=80&w=1172&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Modern Coffee Table',
-    category: 'Furniture',
-    description: 'A sleek, modern coffee table made of polished wood.',
-    imageUrl: 'https://plus.unsplash.com/premium_photo-1681487762009-6c81a476c607?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Executive Office Chair',
-    category: 'Furniture',
-    description: 'Ergonomic chair for maximum comfort during long work hours.',
-    imageUrl: 'https://media.istockphoto.com/id/875326344/photo/black-office-chair.jpg?s=2048x2048&w=is&k=20&c=F7tDFbQoW36tbp12UJ2Hucnjo2bphmcugrssjoNJ4rg='
-  },
-  {
-    name: 'Yoga Mat',
-    category: 'Fitness',
-    description: 'Non-slip yoga mat for a perfect grip.',
-    imageUrl: 'https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Fitness Dumbbells',
-    category: 'Fitness',
-    description: 'Adjustable dumbbell set for a full-body workout.',
-    imageUrl: 'https://images.unsplash.com/photo-1609674248079-e9242e48c06b?q=80&w=1174&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Elegant Handbag',
-    category: 'Accessories',
-    description: 'A luxurious handbag for a touch of elegance.',
-    imageUrl: 'https://images.unsplash.com/photo-1743324690280-62c0699f46d2?q=80&w=850&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Leather Belt',
-    category: 'Accessories',
-    description: 'A high-quality leather belt that complements any outfit.',
-    imageUrl: 'https://images.unsplash.com/photo-1624222247344-550fb60583dc?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Formal Dress Shirt',
-    category: 'Apparel',
-    description: 'A crisp formal shirt for professional settings.',
-    imageUrl: 'https://images.unsplash.com/photo-1602810318660-d2c46b750f88?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Slim Fit Jeans',
-    category: 'Apparel',
-    description: 'Comfortable and durable jeans for everyday use.',
-    imageUrl: 'https://images.unsplash.com/photo-1542574621-e088a4464f7e?q=80&w=680&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Running Sneakers',
-    category: 'Shoes',
-    description: 'Lightweight and breathable sneakers for long runs.',
-    imageUrl: 'https://images.unsplash.com/photo-1709258228137-19a8c193be39?q=80&w=811&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Hiking Boots',
-    category: 'Shoes',
-    description: 'Sturdy hiking boots for rough terrain.',
-    imageUrl: 'https://images.unsplash.com/photo-1698763954905-c9b24f40134f?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Gaming Keyboard',
-    category: 'Electronics',
-    description: 'Mechanical keyboard with customizable RGB lighting.',
-    imageUrl: 'https://images.unsplash.com/photo-1626155399627-86488538895d?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Wireless Mouse',
-    category: 'Electronics',
-    description: 'Ergonomic wireless mouse with a long battery life.',
-    imageUrl: 'https://images.unsplash.com/photo-1527814050087-3793815479db?q=80&w=1028&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Dining Table',
-    category: 'Furniture',
-    description: 'A modern dining table that seats six people.',
-    imageUrl: 'https://images.unsplash.com/photo-1615066390971-03e4e1c36ddf?q=80&w=804&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Living Room Sofa',
-    category: 'Furniture',
-    description: 'A comfortable three-seater sofa for your living room.',
-    imageUrl: 'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Resistance Bands',
-    category: 'Fitness',
-    description: 'Set of resistance bands with different tensions.',
-    imageUrl: 'https://images.unsplash.com/photo-1515775538093-d2d95c5ee4f5?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Cycling Helmet',
-    category: 'Fitness',
-    description: 'Lightweight and ventilated helmet for safety.',
-    imageUrl: 'https://images.unsplash.com/photo-1701522814811-532e0ce6ef74?q=80&w=1172&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Silver Necklace',
-    category: 'Accessories',
-    description: 'A delicate silver necklace with a heart pendant.',
-    imageUrl: 'https://images.unsplash.com/photo-1676329947145-99145926d3eb?q=80&w=979&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Wristwatch',
-    category: 'Accessories',
-    description: 'A classic wristwatch with a stainless steel band.',
-    imageUrl: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=1180&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Wool Sweater',
-    category: 'Apparel',
-    description: 'A cozy wool sweater for cold weather.',
-    imageUrl: 'https://plus.unsplash.com/premium_photo-1671135590215-ded219822a44?q=80&w=773&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Casual Hoodie',
-    category: 'Apparel',
-    description: 'A comfortable hoodie with a front pocket.',
-    imageUrl: 'https://plus.unsplash.com/premium_photo-1690341214258-18cb88438805?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Leather Loafers',
-    category: 'Shoes',
-    description: 'Stylish slip-on loafers for a relaxed look.',
-    imageUrl: 'https://images.unsplash.com/photo-1616406432452-07bc5938759d?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'High-Top Sneakers',
-    category: 'Shoes',
-    description: 'Iconic high-top sneakers with a durable build.',
-    imageUrl: 'https://plus.unsplash.com/premium_photo-1723773743655-71e6b5961089?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Portable Speaker',
-    category: 'Electronics',
-    description: 'A compact and powerful speaker with Bluetooth connectivity.',
-    imageUrl: 'https://images.unsplash.com/photo-1589256469067-ea99122bbdc4?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Tablet',
-    category: 'Electronics',
-    description: 'A high-resolution tablet for work and entertainment.',
-    imageUrl: 'https://images.unsplash.com/photo-1561154464-82e9adf32764?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Bookshelf',
-    category: 'Furniture',
-    description: 'A tall wooden bookshelf with multiple shelves.',
-    imageUrl: 'https://images.unsplash.com/photo-1559133082-d15e8502d064?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Bed Frame',
-    category: 'Furniture',
-    description: 'A sturdy bed frame with a minimalist design.',
-    imageUrl: 'https://plus.unsplash.com/premium_photo-1667764824866-20cf3f787402?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Jump Rope',
-    category: 'Fitness',
-    description: 'Adjustable jump rope for cardio workouts.',
-    imageUrl: 'https://plus.unsplash.com/premium_photo-1664529498751-9bcd541edb9f?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Exercise Bike',
-    category: 'Fitness',
-    description: 'Stationary exercise bike for indoor cycling.',
-    imageUrl: 'https://images.unsplash.com/photo-1591741535018-d042766c62eb?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Sunglasses',
-    category: 'Accessories',
-    description: 'Stylish sunglasses with UV protection.',
-    imageUrl: 'https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Travel Backpack',
-    category: 'Accessories',
-    description: 'A durable backpack with multiple compartments.',
-    imageUrl: 'https://images.unsplash.com/photo-1575844264771-892081089af5?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Winter Coat',
-    category: 'Apparel',
-    description: 'A warm winter coat to brave the cold.',
-    imageUrl: 'https://plus.unsplash.com/premium_photo-1671030274122-b6ac34f87b8b?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Polo Shirt',
-    category: 'Apparel',
-    description: 'A casual polo shirt for a smart look.',
-    imageUrl: 'https://images.unsplash.com/photo-1625910513399-c9fcba54338c?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Summer Sandals',
-    category: 'Shoes',
-    description: 'Comfortable and durable sandals for summer.',
-    imageUrl: 'https://plus.unsplash.com/premium_photo-1720760950538-49750a883027?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Formal Shoes',
-    category: 'Shoes',
-    description: 'Polished formal shoes for special events.',
-    imageUrl: 'https://images.unsplash.com/photo-1668069226492-508742b03147?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'High-Performance Laptop',
-    category: 'Electronics',
-    description: 'A high-performance laptop for professional use.',
-    imageUrl: 'https://images.unsplash.com/photo-1694278963820-eaf19e9fb646?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Digital Camera',
-    category: 'Electronics',
-    description: 'A compact digital camera with a high-resolution sensor.',
-    imageUrl: 'https://images.unsplash.com/photo-1698502453332-03fa2ddceb71?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Kitchen Table',
-    category: 'Furniture',
-    description: 'A sturdy kitchen table for everyday meals.',
-    imageUrl: 'https://images.unsplash.com/photo-1609210885628-4c6a41a8caf7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Dresser',
-    category: 'Furniture',
-    description: 'A wooden dresser with six spacious drawers.',
-    imageUrl: 'https://images.unsplash.com/photo-1579283111509-855c7eea1c49?q=80&w=694&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Treadmill',
-    category: 'Fitness',
-    description: 'A robust treadmill with pre-set workout programs.',
-    imageUrl: 'https://images.unsplash.com/photo-1652364653960-1c23c208ef43?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Foam Roller',
-    category: 'Fitness',
-    description: 'A dense foam roller for muscle recovery and deep tissue massage.',
-    imageUrl: 'https://plus.unsplash.com/premium_photo-1661923103649-0223557b8589?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Scarf',
-    category: 'Accessories',
-    description: 'A soft scarf with a beautiful pattern.',
-    imageUrl: 'https://images.unsplash.com/photo-1601244005535-a48d21d951ac?q=80&w=685&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Leather Wallet',
-    category: 'Accessories',
-    description: 'A compact leather wallet with multiple card slots.',
-    imageUrl: 'https://images.unsplash.com/photo-1627123424574-724758594e93?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
+  // {
+  //   name: 'Denim Jacket',
+  //   category: 'Apparel',
+  //   description: 'Classic blue denim jacket with a relaxed fit.',
+  //   imageUrl: 'https://plus.unsplash.com/premium_photo-1698260795321-4d56527a3f32?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Minimalist T-Shirt',
+  //   category: 'Apparel',
+  //   description: 'A simple white tee, comfortable and versatile.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1659592987637-c766206e72b8?q=80&w=764&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Leather Boots',
+  //   category: 'Shoes',
+  //   description: 'Stylish leather boots, perfect for autumn and winter.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1599012307605-23a0ebe4d321?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'White Sneakers',
+  //   category: 'Shoes',
+  //   description: 'Clean white sneakers that go with any casual outfit.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1600269452121-4f2416e55c28?q=80&w=765&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Over-Ear Headphones',
+  //   category: 'Electronics',
+  //   description: 'High-quality headphones for studio-grade audio.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1638803782506-d975a6809f43?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Smart Watch',
+  //   category: 'Electronics',
+  //   description: 'A stylish smart watch with health tracking features.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?q=80&w=1172&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Modern Coffee Table',
+  //   category: 'Furniture',
+  //   description: 'A sleek, modern coffee table made of polished wood.',
+  //   imageUrl: 'https://plus.unsplash.com/premium_photo-1681487762009-6c81a476c607?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Executive Office Chair',
+  //   category: 'Furniture',
+  //   description: 'Ergonomic chair for maximum comfort during long work hours.',
+  //   imageUrl: 'https://media.istockphoto.com/id/875326344/photo/black-office-chair.jpg?s=2048x2048&w=is&k=20&c=F7tDFbQoW36tbp12UJ2Hucnjo2bphmcugrssjoNJ4rg='
+  // },
+  // {
+  //   name: 'Yoga Mat',
+  //   category: 'Fitness',
+  //   description: 'Non-slip yoga mat for a perfect grip.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Fitness Dumbbells',
+  //   category: 'Fitness',
+  //   description: 'Adjustable dumbbell set for a full-body workout.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1609674248079-e9242e48c06b?q=80&w=1174&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Elegant Handbag',
+  //   category: 'Accessories',
+  //   description: 'A luxurious handbag for a touch of elegance.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1743324690280-62c0699f46d2?q=80&w=850&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Leather Belt',
+  //   category: 'Accessories',
+  //   description: 'A high-quality leather belt that complements any outfit.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1624222247344-550fb60583dc?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Formal Dress Shirt',
+  //   category: 'Apparel',
+  //   description: 'A crisp formal shirt for professional settings.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1602810318660-d2c46b750f88?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Slim Fit Jeans',
+  //   category: 'Apparel',
+  //   description: 'Comfortable and durable jeans for everyday use.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1542574621-e088a4464f7e?q=80&w=680&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Running Sneakers',
+  //   category: 'Shoes',
+  //   description: 'Lightweight and breathable sneakers for long runs.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1709258228137-19a8c193be39?q=80&w=811&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Hiking Boots',
+  //   category: 'Shoes',
+  //   description: 'Sturdy hiking boots for rough terrain.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1698763954905-c9b24f40134f?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Gaming Keyboard',
+  //   category: 'Electronics',
+  //   description: 'Mechanical keyboard with customizable RGB lighting.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1626155399627-86488538895d?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Wireless Mouse',
+  //   category: 'Electronics',
+  //   description: 'Ergonomic wireless mouse with a long battery life.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1527814050087-3793815479db?q=80&w=1028&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Dining Table',
+  //   category: 'Furniture',
+  //   description: 'A modern dining table that seats six people.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1615066390971-03e4e1c36ddf?q=80&w=804&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Living Room Sofa',
+  //   category: 'Furniture',
+  //   description: 'A comfortable three-seater sofa for your living room.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Resistance Bands',
+  //   category: 'Fitness',
+  //   description: 'Set of resistance bands with different tensions.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1515775538093-d2d95c5ee4f5?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Cycling Helmet',
+  //   category: 'Fitness',
+  //   description: 'Lightweight and ventilated helmet for safety.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1701522814811-532e0ce6ef74?q=80&w=1172&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Silver Necklace',
+  //   category: 'Accessories',
+  //   description: 'A delicate silver necklace with a heart pendant.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1676329947145-99145926d3eb?q=80&w=979&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Wristwatch',
+  //   category: 'Accessories',
+  //   description: 'A classic wristwatch with a stainless steel band.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=1180&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Wool Sweater',
+  //   category: 'Apparel',
+  //   description: 'A cozy wool sweater for cold weather.',
+  //   imageUrl: 'https://plus.unsplash.com/premium_photo-1671135590215-ded219822a44?q=80&w=773&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Casual Hoodie',
+  //   category: 'Apparel',
+  //   description: 'A comfortable hoodie with a front pocket.',
+  //   imageUrl: 'https://plus.unsplash.com/premium_photo-1690341214258-18cb88438805?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Leather Loafers',
+  //   category: 'Shoes',
+  //   description: 'Stylish slip-on loafers for a relaxed look.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1616406432452-07bc5938759d?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'High-Top Sneakers',
+  //   category: 'Shoes',
+  //   description: 'Iconic high-top sneakers with a durable build.',
+  //   imageUrl: 'https://plus.unsplash.com/premium_photo-1723773743655-71e6b5961089?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Portable Speaker',
+  //   category: 'Electronics',
+  //   description: 'A compact and powerful speaker with Bluetooth connectivity.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1589256469067-ea99122bbdc4?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Tablet',
+  //   category: 'Electronics',
+  //   description: 'A high-resolution tablet for work and entertainment.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1561154464-82e9adf32764?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Bookshelf',
+  //   category: 'Furniture',
+  //   description: 'A tall wooden bookshelf with multiple shelves.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1559133082-d15e8502d064?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Bed Frame',
+  //   category: 'Furniture',
+  //   description: 'A sturdy bed frame with a minimalist design.',
+  //   imageUrl: 'https://plus.unsplash.com/premium_photo-1667764824866-20cf3f787402?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Jump Rope',
+  //   category: 'Fitness',
+  //   description: 'Adjustable jump rope for cardio workouts.',
+  //   imageUrl: 'https://plus.unsplash.com/premium_photo-1664529498751-9bcd541edb9f?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Exercise Bike',
+  //   category: 'Fitness',
+  //   description: 'Stationary exercise bike for indoor cycling.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1591741535018-d042766c62eb?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Sunglasses',
+  //   category: 'Accessories',
+  //   description: 'Stylish sunglasses with UV protection.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Travel Backpack',
+  //   category: 'Accessories',
+  //   description: 'A durable backpack with multiple compartments.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1575844264771-892081089af5?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Winter Coat',
+  //   category: 'Apparel',
+  //   description: 'A warm winter coat to brave the cold.',
+  //   imageUrl: 'https://plus.unsplash.com/premium_photo-1671030274122-b6ac34f87b8b?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Polo Shirt',
+  //   category: 'Apparel',
+  //   description: 'A casual polo shirt for a smart look.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1625910513399-c9fcba54338c?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Summer Sandals',
+  //   category: 'Shoes',
+  //   description: 'Comfortable and durable sandals for summer.',
+  //   imageUrl: 'https://plus.unsplash.com/premium_photo-1720760950538-49750a883027?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Formal Shoes',
+  //   category: 'Shoes',
+  //   description: 'Polished formal shoes for special events.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1668069226492-508742b03147?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'High-Performance Laptop',
+  //   category: 'Electronics',
+  //   description: 'A high-performance laptop for professional use.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1694278963820-eaf19e9fb646?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Digital Camera',
+  //   category: 'Electronics',
+  //   description: 'A compact digital camera with a high-resolution sensor.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1698502453332-03fa2ddceb71?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Kitchen Table',
+  //   category: 'Furniture',
+  //   description: 'A sturdy kitchen table for everyday meals.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1609210885628-4c6a41a8caf7?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Dresser',
+  //   category: 'Furniture',
+  //   description: 'A wooden dresser with six spacious drawers.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1579283111509-855c7eea1c49?q=80&w=694&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Treadmill',
+  //   category: 'Fitness',
+  //   description: 'A robust treadmill with pre-set workout programs.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1652364653960-1c23c208ef43?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Foam Roller',
+  //   category: 'Fitness',
+  //   description: 'A dense foam roller for muscle recovery and deep tissue massage.',
+  //   imageUrl: 'https://plus.unsplash.com/premium_photo-1661923103649-0223557b8589?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Scarf',
+  //   category: 'Accessories',
+  //   description: 'A soft scarf with a beautiful pattern.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1601244005535-a48d21d951ac?q=80&w=685&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Leather Wallet',
+  //   category: 'Accessories',
+  //   description: 'A compact leather wallet with multiple card slots.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1627123424574-724758594e93?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
   {
     name: 'Lightweight Jacket',
     category: 'Apparel',
@@ -373,30 +341,30 @@ const sampleProducts = [
     description: 'Casual sneakers.',
     imageUrl: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
   },
-  {
-    name: 'Smart Speaker',
-    category: 'Electronics',
-    description: 'A compact and powerful speaker with smart features.',
-    imageUrl: 'https://images.unsplash.com/photo-1519558260268-cde7e03a0152?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
-  {
-    name: 'Modern Tablet',
-    category: 'Electronics',
-    description: 'A high-resolution tablet for work and entertainment.',
-    imageUrl: 'https://images.unsplash.com/photo-1691973172023-1667332f269e?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
+  // {
+  //   name: 'Smart Speaker',
+  //   category: 'Electronics',
+  //   description: 'A compact and powerful speaker with smart features.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1519558260268-cde7e03a0152?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
+  // {
+  //   name: 'Modern Tablet',
+  //   category: 'Electronics',
+  //   description: 'A high-resolution tablet for work and entertainment.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1691973172023-1667332f269e?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
   {
     name: 'Wooden Bookshelf',
     category: 'Furniture',
     description: 'A tall wooden bookshelf with multiple shelves.',
     imageUrl: 'https://images.unsplash.com/photo-1730165867812-913d003b75c2?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
   },
-  {
-    name: 'Ergonomic Chair',
-    category: 'Furniture',
-    description: 'A comfortable chair for your living room.',
-    imageUrl: 'https://images.unsplash.com/photo-1688578735352-9a6f2ac3b70a?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  },
+  // {
+  //   name: 'Ergonomic Chair',
+  //   category: 'Furniture',
+  //   description: 'A comfortable chair for your living room.',
+  //   imageUrl: 'https://images.unsplash.com/photo-1688578735352-9a6f2ac3b70a?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // },
   {
     name: 'T-Shirt',
     category: 'Apparel',
@@ -620,9 +588,9 @@ const importData = async () => {
     await connectDB(MONGO_URI);
 
     // Clear existing data
-    await Product.deleteMany();
+    // await Product.deleteMany();
 
-    console.log('Existing data cleared.');
+    // console.log('Existing data cleared.');
 
     // Get the feature vector for each product before inserting
     console.log('Generating feature vectors for products...');
@@ -633,7 +601,7 @@ const importData = async () => {
         productsWithVectors.push({ ...product, featureVector });
         console.log(`Generated vector for ${product.name}. Waiting to avoid rate limits...`);
         // Introduce a delay to avoid hitting the rate limit (15 requests/min)
-        await new Promise(resolve => setTimeout(resolve, 60000));
+        await new Promise(resolve => setTimeout(resolve, 30000));
       } catch (err) {
         console.error(`Failed to generate vector for ${product.name}:`, err.message);
         productsWithVectors.push({ ...product, featureVector: [] });

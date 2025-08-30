@@ -1,6 +1,10 @@
+// File: frontend/src/pages/ProductsPage.jsx
+// Description: This page displays all products and includes the visual search interface.
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import ProductCard from '../components/ProductCard.jsx';
+
 
 const ProductsPage = () => {
   const [products, setProducts] = useState([]);
@@ -16,7 +20,9 @@ const ProductsPage = () => {
     setError(null);
     setSearchMode(false);
     try {
-      const response = await axios.get('http://localhost:5000/api/products');
+      const response = await axios.get('http://localhost:5000/api/products', {
+        withCredentials: true,
+      });
       setProducts(response.data);
     } catch (err) {
       console.error('Error fetching products:', err);
@@ -34,18 +40,22 @@ const ProductsPage = () => {
     setLoading(true);
     setError(null);
     setSearchMode(true);
+    let imageToSend;
+
     try {
-      let imageToSend;
       if (file) {
-        // Create a data URL from the file
+        // Handle file upload
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onloadend = async () => {
           imageToSend = reader.result;
+          setSearchImage(imageToSend);
           await sendSearchRequest(imageToSend);
         };
       } else if (imageUrl) {
+        // Handle image URL
         imageToSend = imageUrl;
+        setSearchImage(imageUrl);
         await sendSearchRequest(imageToSend);
       }
     } catch (err) {
@@ -54,11 +64,11 @@ const ProductsPage = () => {
       setLoading(false);
     }
   };
-  
+
   const sendSearchRequest = async (image) => {
     try {
       const response = await axios.post(
-        'http://5000/api/products/search',
+        'http://localhost:5000/api/search',
         { image },
         { withCredentials: true }
       );
@@ -108,25 +118,28 @@ const ProductsPage = () => {
                 setSearchImage(e.target.value);
               }}
             />
-            <div className="relative w-full md:w-auto">
+            <div className='text-4xl font-bold text-center text-white'>
+              OR
+            </div>
+            <div className="relative w-full md:w-auto cursor-pointer">
               <input
                 type="file"
                 onChange={handleFileChange}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 accept="image/*"
               />
-              <div className="w-full rounded-lg bg-gray-700 px-6 py-3 text-center font-semibold text-gray-100 transition hover:bg-gray-600">
+              <div className="w-full rounded-lg bg-gray-900 px-6 py-3 text-center font-semibold text-gray-100 transition hover:bg-gray-600">
                 Choose File
               </div>
             </div>
-            <button
+          </div>
+          <button
               onClick={handleSearch}
               className="cursor-pointer w-full md:w-auto rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
               disabled={loading || (!imageUrl && !file)}
             >
               {loading ? 'Searching...' : 'Search'}
             </button>
-          </div>
           {searchMode && (
             <button
               onClick={handleClear}

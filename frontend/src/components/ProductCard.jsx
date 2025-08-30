@@ -1,29 +1,53 @@
 // File: frontend/src/components/ProductCard.jsx
-import React from 'react';
+// Description: A reusable component to display a single product in a card format.
 
-const ProductCard = ({ product }) => {
-    return (
-        <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
-            <img 
-                src={product.imageUrl} 
-                alt={product.name} 
-                className="w-full h-72 object-cover" // Increased height to make the image more prominent
-                onError={(e) => {
-                    e.target.onerror = null; // Prevent infinite loop
-                    e.target.src = 'https://placehold.co/600x400/CCCCCC/FFFFFF?text=Image+Not+Found';
-                }}
-            />
-            <div className="p-4">
-                <h2 className="text-lg font-semibold text-gray-900 truncate">
-                    {product.name}
-                </h2>
-                <p className="text-sm text-gray-500 mt-1">{product.category}</p>
-                <p className="text-sm text-gray-700 mt-2 line-clamp-2">
-                    {product.description}
-                </p>
-            </div>
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+
+const ProductCard = ({ product, similarityScore }) => {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate(`/products/${product._id}`);
+  };
+
+  return (
+    <div
+      onClick={handleClick}
+      className="relative flex flex-col overflow-hidden rounded-xl bg-gray-800 shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 cursor-pointer"
+    >
+      {/* Product Image */}
+      <div className="flex-shrink-0 w-full h-80 overflow-hidden">
+        <img
+          src={product.imageUrl}
+          alt={product.name}
+          className="w-full h-full object-cover"
+        />
+      </div>
+
+      {/* Product Details */}
+      <div className="p-4 flex-grow flex flex-col justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-100 mb-1 leading-tight">
+            {product.name}
+          </h3>
+          <p className="text-sm text-gray-400 font-medium">
+            {product.category}
+          </p>
+          {similarityScore !== undefined && (
+            <p className="text-xs text-indigo-400 mt-1">
+              Similarity: {similarityScore.toFixed(2)}%
+            </p>
+          )}
         </div>
-    );
+      </div>
+
+      {/* Hover overlay with CTA or details if needed */}
+      <div className="absolute inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
+        <span className="text-white text-lg font-bold">View Details</span>
+      </div>
+    </div>
+  );
 };
 
 export default ProductCard;
