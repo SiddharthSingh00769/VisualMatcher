@@ -15,9 +15,13 @@ const MONGO_URI = process.env.MONGO_URI;
 app.use(cookieParser());
 app.use(express.json());
 
+const frontendOrigin = process.env.NODE_ENV === 'production' 
+  ? 'https://visual-matcher-nine.vercel.app/' 
+  : 'http://localhost:5173';
+
 app.use(cors({
-    origin: 'http://localhost:5173', 
-    credentials: true, 
+    origin: frontendOrigin,
+    credentials: true,
 }));
 connectDB(MONGO_URI);
 
