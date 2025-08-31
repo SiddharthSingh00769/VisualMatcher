@@ -23,7 +23,6 @@ app.use(cors({
     origin: frontendOrigin,
     credentials: true,
 }));
-
 connectDB(MONGO_URI);
 
 app.use('/api/auth', authRoutes);
