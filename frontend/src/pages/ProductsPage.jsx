@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import ProductCard from '../components/ProductCard.jsx';
+import { useNavigate } from 'react-router-dom';
 
 
 const ProductsPage = () => {
@@ -14,6 +15,7 @@ const ProductsPage = () => {
   const [searchImage, setSearchImage] = useState(null);
   const [searchMode, setSearchMode] = useState(false);
   const [file, setFile] = useState(null);
+  const navigate = useNavigate();
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -99,6 +101,7 @@ const ProductsPage = () => {
   };
 
   return (
+    
     <div className="bg-gradient-to-r from-indigo-900 to-slate-900 min-h-screen">
       <div className="container mx-auto p-4 md:p-8">
         <h1 className="mb-8 text-center text-3xl font-bold text-gray-100 md:text-4xl">
@@ -139,7 +142,13 @@ const ProductsPage = () => {
               disabled={loading || (!imageUrl && !file)}
             >
               {loading ? 'Searching...' : 'Search'}
-            </button>
+          </button>
+          <button
+            onClick={() => navigate('/add-product')}
+            className="rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white transition hover:bg-indigo-700"
+          >
+            Add New Product
+          </button>
           {searchMode && (
             <button
               onClick={handleClear}

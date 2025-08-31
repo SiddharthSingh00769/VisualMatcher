@@ -7,6 +7,7 @@ import Header from './components/Header.jsx';
 import axios from 'axios';
 import './index.css';
 import ProductDetailPage from './pages/ProductDetailPage.jsx';
+import AddProductPage from './pages/AddProductPage.jsx';
 
 const App = () => {
   // State to determine if the user is authenticated
@@ -57,8 +58,9 @@ const App = () => {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/auth" element={<AuthPage onAuthSuccess={handleAuthSuccess} />} />
-         <Route path="/products/:id" element={isAuthenticated ? <ProductDetailPage /> : <AuthPage onAuthSuccess={handleAuthSuccess} />} />
+        <Route path="/products/:id" element={isAuthenticated ? <ProductDetailPage /> : <AuthPage onAuthSuccess={handleAuthSuccess} />} />
         <Route path="/products" element={isAuthenticated ? <ProductsPage /> : <AuthPage onAuthSuccess={handleAuthSuccess} />} />
+        <Route path="/add-product" element={isAuthenticated ? <AddProductPage /> : <AuthPage onAuthSuccess={handleAuthSuccess} />} />
       </Routes>
     </div>
   );

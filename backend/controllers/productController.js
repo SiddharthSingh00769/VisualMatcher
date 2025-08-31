@@ -150,6 +150,35 @@ export const getProductById = async (req, res) => {
   }
 };
 
+// @desc    Add a new product
+// @route   POST /api/products
+// @access  Private
+export const addProduct = async (req, res) => {
+  const { name, category, description, imageUrl } = req.body;
+
+  try {
+    // Generate the feature vector using the image URL
+    const featureVector = await getVectorFromImage(imageUrl);
+
+    // Create a new product instance
+    const newProduct = new Product({
+      name,
+      category,
+      description,
+      imageUrl,
+      featureVector
+    });
+
+    // Save the new product to the database
+    const savedProduct = await newProduct.save();
+
+    res.status(201).json({ message: 'Product added successfully!', product: savedProduct });
+  } catch (err) {
+    console.error('Error adding new product:', err.message);
+    res.status(500).json({ message: 'Server error during product creation.' });
+  }
+};
+
 // @desc    Search for products based on an image
 // @route   POST /api/products/search
 // @access  Private
@@ -165,12 +194,13 @@ export const searchProducts = async (req, res) => {
       return { ...product.toObject(), similarityScore: score };
     });
 
-    // Sort products by similarity score in descending order
+    // Sort products by similarity score in descending order and return only the top 12
     productsWithScores.sort((a, b) => b.similarityScore - a.similarityScore);
+    const top12Products = productsWithScores.slice(0, 12);
 
     res.json({
       message: 'Search successful. Here are the results.',
-      similarProducts: productsWithScores,
+      similarProducts: top12Products,
     });
 
   } catch (err) {

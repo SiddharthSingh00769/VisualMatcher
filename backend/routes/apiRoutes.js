@@ -1,5 +1,5 @@
 import express from 'express';
-import { getProductById, getProducts, searchProducts } from '../controllers/productController.js';
+import { addProduct, getProductById, getProducts, searchProducts } from '../controllers/productController.js';
 import protect from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -18,5 +18,9 @@ router.get('/products/:id', getProductById);
 // @desc    Search for products based on an image
 // @access  Private
 router.post('/search', protect, searchProducts);
+
+// @route   POST /api/products
+// @desc    Add a new product
+router.post('/products', protect, addProduct);
 
 export default router;
