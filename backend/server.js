@@ -16,7 +16,7 @@ app.use(cookieParser());
 app.use(express.json());
 
 const frontendOrigin = process.env.NODE_ENV === 'production' 
-  ? 'https://visual-matcher-nine.vercel.app/' 
+  ? 'https://visual-matcher-nine.vercel.app' 
   : 'http://localhost:5173';
 
 app.use(cors({
