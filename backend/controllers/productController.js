@@ -528,95 +528,131 @@ export const keywordMapping = {
   ]
 };
 
+import path from "path";
+import axios from "axios";
+
 export const getVectorFromImage = async (image) => {
   try {
     let base64Image;
     let mimeType;
 
-    if (image.startsWith('data:')) {
-      const parts = image.split(';');
-      mimeType = parts[0].split(':')[1];
-      base64Image = parts[1].split(',')[1];
+    if (image.startsWith("data:")) {
+      const parts = image.split(";");
+      mimeType = parts[0].split(":")[1];
+      base64Image = parts[1].split(",")[1];
     } else {
+      // Case: image URL
       const imageResponse = await axios.get(image, {
-        responseType: 'arraybuffer'
+        responseType: "arraybuffer",
       });
-      const imageBuffer = Buffer.from(imageResponse.data, 'binary');
-      base64Image = imageBuffer.toString('base64');
-      mimeType = imageResponse.headers['content-type'];
+      const imageBuffer = Buffer.from(imageResponse.data, "binary");
+      base64Image = imageBuffer.toString("base64");
+      mimeType = imageResponse.headers["content-type"];
+      if (!mimeType || mimeType === "application/octet-stream") {
+        const ext = path.extname(image).toLowerCase();
+        if (ext === ".jpg" || ext === ".jpeg") mimeType = "image/jpeg";
+        else if (ext === ".png") mimeType = "image/png";
+        else if (ext === ".webp") mimeType = "image/webp";
+        else mimeType = "image/jpeg"; 
+      }
     }
-    
-    const prompt = `
-    Carefully analyze this product image and extract every relevant detail. Focus on the following aspects:
-    1. Product type and category (e.g., shoes, laptop, handbag)
-    2. Colors (all dominant and accent colors, shades, gradients)
-    3. Material and texture (e.g., leather, denim, metallic, smooth, rough)
-    4. Shape and geometry (e.g., round, square, cylindrical)
-    5. Patterns or prints (e.g., striped, floral, plaid, polka-dot)
-    6. Style and fashion attributes (e.g., casual, formal, sporty)
-    7. Functional features (e.g., zipper, pockets, straps, buttons)
-    8. Any accessories or additional visible objects
 
-    Output the results as a **flat comma-separated list of keywords only**. 
-    - Avoid sentences, paragraphs, or descriptions.  
-    - Use precise, product-relevant terms suitable for categorization and vectorization.  
-    - Prioritize mentioning colors and high-value product features first.  
-    - Include synonyms or alternate terms if applicable.
-    `;
-    
+    const prompt = `
+      Carefully analyze this product image and extract every relevant detail. Focus on the following aspects:
+      1. Product type and category (e.g., shoes, laptop, handbag)
+      2. Colors (all dominant and accent colors, shades, gradients)
+      3. Material and texture (e.g., leather, denim, metallic, smooth, rough)
+      4. Shape and geometry (e.g., round, square, cylindrical)
+      5. Patterns or prints (e.g., striped, floral, plaid, polka-dot)
+      6. Style and fashion attributes (e.g., casual, formal, sporty)
+      7. Functional features (e.g., zipper, pockets, straps, buttons)
+      8. Any accessories or additional visible objects
+
+      Output the results as a **flat comma-separated list of keywords only**. 
+      - Avoid sentences, paragraphs, or descriptions.  
+      - Use precise, product-relevant terms suitable for categorization and vectorization.  
+      - Prioritize mentioning colors and high-value product features first.  
+      - Include synonyms or alternate terms if applicable.
+      `;
+
     const imagePart = {
       inlineData: {
         data: base64Image,
-        mimeType: mimeType
-      }
+        mimeType: mimeType,
+      },
     };
 
     const result = await model.generateContent([prompt, imagePart]);
     const response = await result.response;
     const text = response.text();
-    
+
     const textLower = text.toLowerCase();
-    
+
     const vector = [];
-    
+
     const getKeywordCount = (text, keywords) => {
       return keywords.reduce((acc, keyword) => {
-        const regex = new RegExp(`\\b${keyword.replace('-', '\\-')}\\b`, 'g');
+        const regex = new RegExp(`\\b${keyword.replace("-", "\\-")}\\b`, "g");
         return acc + (text.match(regex) || []).length;
       }, 0);
     };
 
     // Define priority categories and their weights
     const priorityLevels = {
-      4: ['highPriority'],
-      3: ['shoes', 'camera', 'laptop', 'watch', 'handbag', 'jacket', 'shirt', 'smartwatch', 'gamingConsole', 'cameraLens', 'headphones', 'backpack'],
-      2: ['apparel', 'furniture', 'fitness', 'accessory', 'electronics', 'kitchenware', 'beauty', 'toys', 'books', 'grocery'],
-      1: ['material', 'pattern', 'style', 'fit', 'shape', 'features', 'finish'], // low priority attributes
-      1.5: ['color'] // sub-priority
+      4: ["highPriority"],
+      3: [
+        "shoes",
+        "camera",
+        "laptop",
+        "watch",
+        "handbag",
+        "jacket",
+        "shirt",
+        "smartwatch",
+        "gamingConsole",
+        "cameraLens",
+        "headphones",
+        "backpack",
+      ],
+      2: [
+        "apparel",
+        "furniture",
+        "fitness",
+        "accessory",
+        "electronics",
+        "kitchenware",
+        "beauty",
+        "toys",
+        "books",
+        "grocery",
+      ],
+      1: ["material", "pattern", "style", "fit", "shape", "features", "finish"], // low priority
+      1.5: ["color"], // sub-priority
     };
 
     // Iterate over keywordMapping entries and apply weights
     const allKeywords = Object.keys(keywordMapping);
-    
-    allKeywords.forEach(category => {
-        const keywords = keywordMapping[category];
-        const count = getKeywordCount(textLower, keywords);
 
-        let weight = 1; // default low-priority weight
-        if (priorityLevels[4].includes(category)) weight = 4;
-        else if (priorityLevels[3].includes(category)) weight = 3;
-        else if (priorityLevels[2].includes(category)) weight = 2;
-        else if (priorityLevels[1.5].includes(category)) weight = 1.5;
+    allKeywords.forEach((category) => {
+      const keywords = keywordMapping[category];
+      const count = getKeywordCount(textLower, keywords);
 
-        vector.push(count * weight);
+      let weight = 1; // default
+      if (priorityLevels[4].includes(category)) weight = 4;
+      else if (priorityLevels[3].includes(category)) weight = 3;
+      else if (priorityLevels[2].includes(category)) weight = 2;
+      else if (priorityLevels[1.5].includes(category)) weight = 1.5;
+
+      vector.push(count * weight);
     });
-    
+
     return vector;
   } catch (err) {
-    console.error('Error generating vector from image:', err);
+    console.error("Error generating vector from image:", err);
     return [];
   }
 };
+
 
 export const getProducts = async (req, res) => {
   try {
