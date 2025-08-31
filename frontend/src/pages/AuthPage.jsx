@@ -1,13 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import AuthForm from '../components/AuthForm.jsx';
 
 const AuthPage = ({ onAuthSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-r from-indigo-900 to-slate-900 p-4 font-inter text-white antialiased relative overflow-hidden">
-      {/* Background Gradient */}
-      <div className="absolute inset-0 z-0 opacity-90 animate-pulse-slow"></div>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-r from-indigo-900 via-purple-900 to-slate-900 p-4 font-inter text-white antialiased relative overflow-hidden">
 
       {/* Content */}
       <div className="relative z-10 w-full max-w-md rounded-3xl bg-gray-900 bg-opacity-70 p-8 shadow-2xl md:p-10 animate-fadeInUp">

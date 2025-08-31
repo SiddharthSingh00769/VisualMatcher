@@ -1,7 +1,4 @@
-// File: frontend/src/pages/ProductsPage.jsx
-// Description: This page displays all products and includes the visual search interface.
-
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import ProductCard from '../components/ProductCard.jsx';
 import { useNavigate } from 'react-router-dom';
@@ -102,7 +99,7 @@ const ProductsPage = () => {
 
   return (
     
-    <div className="bg-gradient-to-r from-indigo-900 to-slate-900 min-h-screen">
+    <div className="bg-gradient-to-r from-indigo-900 via-purple-900 to-slate-900 min-h-screen">
       <div className="container mx-auto p-4 md:p-8">
         <h1 className="mb-8 text-center text-3xl font-bold text-gray-100 md:text-4xl">
           {searchMode ? 'Search Results' : 'All Products'}

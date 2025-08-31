@@ -1,7 +1,3 @@
-// File: frontend/src/components/ProductCard.jsx
-// Description: A reusable component to display a single product in a card format.
-
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const ProductCard = ({ product, similarityScore }) => {
@@ -42,7 +38,6 @@ const ProductCard = ({ product, similarityScore }) => {
         </div>
       </div>
 
-      {/* Hover overlay with CTA or details if needed */}
       <div className="absolute inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
         <span className="text-white text-lg font-bold">View Details</span>
       </div>

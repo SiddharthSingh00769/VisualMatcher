@@ -1,7 +1,4 @@
-// File: frontend/src/pages/AddProductPage.jsx
-// Description: A page with a form to add a new product to the database.
-
-import React, { useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -38,7 +35,7 @@ const AddProductPage = () => {
           description: '',
           imageUrl: '',
         });
-        setTimeout(() => navigate('/products'), 2000); // Redirect to products page after 2 seconds
+        setTimeout(() => navigate('/products'), 2000); 
       }
     } catch (err) {
       console.error('Error adding product:', err);

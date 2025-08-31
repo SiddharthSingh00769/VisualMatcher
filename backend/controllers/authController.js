@@ -41,9 +41,9 @@ export const registerUser = async (req, res) => {
             // If the user is successfully created, generate a token and save it as a cookie.
             const token = generateToken(user._id);
             res.cookie('token', token, {
-                httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
-                secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-                sameSite: 'strict', // Protects against CSRF attacks
+                httpOnly: true, 
+                secure: process.env.NODE_ENV === 'production', 
+                sameSite: 'strict', 
                 maxAge: 1 * 24 * 60 * 60 * 1000, // 1 day
             });
 
@@ -80,10 +80,10 @@ export const loginUser = async (req, res) => {
             // If credentials are valid, generate a token and save it as a cookie.
             const token = generateToken(user._id);
             res.cookie('token', token, {
-                httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
-                secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-                sameSite: 'strict', // Protects against CSRF attacks
-                maxAge: 1 * 24 * 60 * 60 * 1000, // 1 day
+                httpOnly: true, 
+                secure: process.env.NODE_ENV === 'production', 
+                sameSite: 'strict', 
+                maxAge: 1 * 24 * 60 * 60 * 1000, 
             });
 
             // Return user details without the token in the body

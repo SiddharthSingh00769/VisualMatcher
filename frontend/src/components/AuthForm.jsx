@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 
 const AuthForm = ({ isLogin, onAuthSuccess }) => {
@@ -30,20 +30,14 @@ const AuthForm = ({ isLogin, onAuthSuccess }) => {
       if (response.status === 200 || response.status === 201) {
         setMessage(isLogin ? `Welcome back, ${response.data.username}!` : `Account created for ${response.data.username}!`);
         setFormData({ username: '', email: '', password: '' });
-        
-        // This change ensures redirection happens for both successful login and sign-up
         onAuthSuccess(); 
       }
     } catch (error) {
       if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
         setMessage(error.response.data.message || 'Something went wrong.');
       } else if (error.request) {
-        // The request was made but no response was received
         setMessage('No response from server. Please try again.');
       } else {
-        // Something happened in setting up the request that triggered an error
         setMessage('Network error. Please try again.');
       }
     } finally {

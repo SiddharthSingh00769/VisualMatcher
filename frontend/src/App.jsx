@@ -25,7 +25,7 @@ const App = () => {
     const checkAuthStatus = async () => {
       try {
         const response = await axios.get('http://localhost:5000/api/auth/checkAuth', {
-          withCredentials: true, // This is crucial for sending the cookie
+          withCredentials: true, 
         });
         
         if (response.status === 200) {

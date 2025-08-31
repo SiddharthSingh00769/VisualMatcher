@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -16,7 +15,7 @@ const Header = ({ isAuthenticated, setIsAuthenticated }) => {
   };
 
   return (
-    <header className="p-4 bg-gradient-to-r from-indigo-900 to-slate-900 shadow-md">
+    <header className="p-4 bg-gradient-to-r from-indigo-900 via-purple-900 to-slate-900 shadow-md">
       <div className="container mx-auto flex items-center justify-between">
         <Link to="/" className="text-2xl font-bold text-indigo-500 hover:text-indigo-400 transition">
           Visual Matcher
