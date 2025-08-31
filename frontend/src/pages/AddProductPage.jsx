@@ -1,7 +1,4 @@
-// File: frontend/src/pages/AddProductPage.jsx
-// Description: A page with a form to add a new product to the database.
-
-import React, { useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,7 +10,7 @@ const AddProductPage = () => {
     description: '',
     imageUrl: '',
   });
-  const [file, setFile] = useState(null); // New state for file upload
+  const [file, setFile] = useState(null); 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -23,7 +20,7 @@ const AddProductPage = () => {
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
-    setFormData({ ...formData, imageUrl: '' }); // Clear URL if file is selected
+    setFormData({ ...formData, imageUrl: '' }); 
   };
 
   const handleSubmit = async (e) => {
@@ -52,7 +49,7 @@ const AddProductPage = () => {
     try {
       const payload = {
         ...formData,
-        imageUrl: image, // Use the Base64 string or URL
+        imageUrl: image, 
       };
 
       const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/products`, payload, {
