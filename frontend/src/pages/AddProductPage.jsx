@@ -1,4 +1,7 @@
-import { useState } from 'react';
+// File: frontend/src/pages/AddProductPage.jsx
+// Description: A page with a form to add a new product to the database.
+
+import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,6 +13,7 @@ const AddProductPage = () => {
     description: '',
     imageUrl: '',
   });
+  const [file, setFile] = useState(null); // New state for file upload
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -17,25 +21,49 @@ const AddProductPage = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+    setFormData({ ...formData, imageUrl: '' }); // Clear URL if file is selected
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
 
+    let imageToSend = '';
+
+    if (file) {
+      // Handle file upload
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onloadend = async () => {
+        imageToSend = reader.result;
+        await sendData(imageToSend);
+      };
+    } else if (formData.imageUrl) {
+      // Handle image URL
+      imageToSend = formData.imageUrl;
+      await sendData(imageToSend);
+    }
+  };
+
+  const sendData = async (image) => {
     try {
-      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/products`, formData, {
+      const payload = {
+        ...formData,
+        imageUrl: image, // Use the Base64 string or URL
+      };
+
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/products`, payload, {
         withCredentials: true,
       });
 
       if (response.status === 201) {
         setMessage('Product added successfully!');
-        setFormData({
-          name: '',
-          category: '',
-          description: '',
-          imageUrl: '',
-        });
-        setTimeout(() => navigate('/products'), 2000); 
+        setFormData({ name: '', category: '', description: '', imageUrl: '' });
+        setFile(null);
+        setTimeout(() => navigate('/products'), 2000); // Redirect to products page after 2 seconds
       }
     } catch (err) {
       console.error('Error adding product:', err);
@@ -94,14 +122,29 @@ const AddProductPage = () => {
               value={formData.imageUrl}
               onChange={handleChange}
               className="mt-1 w-full rounded-lg border-2 border-gray-700 bg-gray-900 text-gray-100 p-3 transition focus:border-indigo-500 focus:outline-none"
-              required
+              disabled={file}
+            />
+          </div>
+          <div className='flex items-center justify-center space-x-2 text-gray-300 text-lg'>
+            <span className='font-bold'>OR</span>
+          </div>
+          <div>
+            <label htmlFor="file-upload" className="block text-sm font-medium text-gray-300">Upload Image</label>
+            <input
+              type="file"
+              name="file-upload"
+              id="file-upload"
+              onChange={handleFileChange}
+              className="mt-1 w-full rounded-lg border-2 border-gray-700 bg-gray-900 text-gray-100 p-3 transition focus:border-indigo-500 focus:outline-none"
+              disabled={formData.imageUrl}
+              accept="image/*"
             />
           </div>
           
           <button
             type="submit"
             className="w-full rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
-            disabled={loading}
+            disabled={loading || (!formData.imageUrl && !file)}
           >
             {loading ? 'Adding Product...' : 'Add Product'}
           </button>
