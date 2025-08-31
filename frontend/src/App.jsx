@@ -23,14 +23,10 @@ const App = () => {
     const checkAuthStatus = async () => {
       try {
         const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/auth/checkAuth`, {
-          withCredentials: true, 
+          withCredentials: true,
         });
         
-        if (response.status === 200) {
-          setIsAuthenticated(true);
-        } else {
-          setIsAuthenticated(false);
-        }
+        setIsAuthenticated(response.data.authenticated);
       } catch (error) {
         console.error("Authentication check failed:", error);
         setIsAuthenticated(false);
@@ -45,10 +41,9 @@ const App = () => {
   if (!isAuthReady) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4 font-inter text-gray-800 antialiased flex-col">
-        {/* Spinner */}
         <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent border-solid rounded-full animate-spin mb-6"></div>
         <h1 className="text-center text-xl md:text-2xl font-medium">
-          Loading...Please wait for about 2 min, the backend is processing your request(render takes time to start the backend)
+          Loading... Please wait while we check your authentication status.
         </h1>
       </div>
     );
@@ -56,7 +51,12 @@ const App = () => {
 
   return (
     <div className="min-h-screen">
-      <Header isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />
+      {isAuthReady && (
+        <Header
+          isAuthenticated={isAuthenticated}
+          setIsAuthenticated={setIsAuthenticated}
+        />
+      )}
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/auth" element={<AuthPage onAuthSuccess={handleAuthSuccess} />} />

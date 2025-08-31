@@ -1,30 +1,8 @@
-// File: frontend/src/components/Header.jsx
-// Description: The header component for consistent navigation across pages.
-
-import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-const Header = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAuthReady, setIsAuthReady] = useState(false);
+const Header = ({ isAuthenticated, setIsAuthenticated }) => {
   const navigate = useNavigate();
-
-  const checkAuthStatus = async () => {
-    try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/auth/checkAuth`, {
-        withCredentials: true,
-      });
-      if (response.status === 200) {
-        setIsAuthenticated(true);
-      }
-    } catch (error) {
-      console.error('Authentication check failed:', error);
-      setIsAuthenticated(false);
-    } finally {
-      setIsAuthReady(true);
-    }
-  };
 
   const handleLogout = async () => {
     try {
@@ -32,51 +10,33 @@ const Header = () => {
         withCredentials: true,
       });
       setIsAuthenticated(false);
-      navigate('/');
+      navigate('/auth');
     } catch (err) {
       console.error("Logout failed", err);
     }
   };
 
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  if (!isAuthReady) {
-    return null; // Don't render anything until auth status is known
-  }
-
   return (
-    <header className="bg-gray-900 text-gray-100 shadow-md">
-      <div className="container mx-auto p-4 flex justify-between items-center">
-        <Link to="/" className="text-2xl font-bold text-indigo-400">
+    <header className="p-4 bg-gradient-to-r from-indigo-900 via-purple-900 to-slate-900 shadow-md">
+      <div className="container mx-auto flex items-center justify-between">
+        <Link to="/" className="text-2xl font-bold text-indigo-500 hover:text-indigo-400 transition">
           Visual Matcher
         </Link>
         <nav>
           {isAuthenticated ? (
-            <div className="flex space-x-4 items-center">
-              <Link to="/products" className="text-lg font-medium hover:text-indigo-400 transition-colors">
-                Products
-              </Link>
-              <Link to="/add-product" className="text-lg font-medium hover:text-indigo-400 transition-colors">
-                Add Product
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity50"
-              >
-                Logout
-              </button>
-            </div>
+            <button
+              onClick={handleLogout}
+              className="cursor-pointer px-4 py-2 rounded-lg bg-red-500 font-semibold text-white transition hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
+            >
+              Logout
+            </button>
           ) : (
-            <div className="flex space-x-4">
-              <Link
-                to="/auth"
-                className="rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
-              >
-                Sign In / Register
-              </Link>
-            </div>
+            <Link
+              to="/auth"
+              className="px-4 py-2 rounded-lg bg-indigo-600 font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
+            >
+              Register
+            </Link>
           )}
         </nav>
       </div>
