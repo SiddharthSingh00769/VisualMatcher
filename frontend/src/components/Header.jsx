@@ -6,7 +6,7 @@ const Header = ({ isAuthenticated, setIsAuthenticated }) => {
 
   const handleLogout = async () => {
     try {
-      await axios.post(`${import.meta.env.VITE_BACKEND_URL}api/auth/logout`, { 
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/logout`, { 
         withCredentials: true 
       });
       setIsAuthenticated(false);
