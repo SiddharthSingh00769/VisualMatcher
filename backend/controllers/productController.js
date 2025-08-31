@@ -528,9 +528,6 @@ export const keywordMapping = {
   ]
 };
 
-import path from "path";
-import axios from "axios";
-
 export const getVectorFromImage = async (image) => {
   try {
     let base64Image;
