@@ -10,9 +10,7 @@ import ProductDetailPage from './pages/ProductDetailPage.jsx';
 import AddProductPage from './pages/AddProductPage.jsx';
 
 const App = () => {
-  // State to determine if the user is authenticated
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  // State to track if the authentication check is complete
   const [isAuthReady, setIsAuthReady] = useState(false);
   const navigate = useNavigate();
 
@@ -46,8 +44,12 @@ const App = () => {
 
   if (!isAuthReady) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4 font-inter text-gray-800 antialiased">
-        <h1 className="text-3xl font-bold">Loading...</h1>
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4 font-inter text-gray-800 antialiased flex-col">
+        {/* Spinner */}
+        <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent border-solid rounded-full animate-spin mb-6"></div>
+        <h1 className="text-center text-xl md:text-2xl font-medium">
+          Loading...Please wait for about 2 min, the backend is processing your request(render takes time to start the backend)
+        </h1>
       </div>
     );
   }

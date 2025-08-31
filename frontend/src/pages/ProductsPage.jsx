@@ -3,7 +3,6 @@ import axios from 'axios';
 import ProductCard from '../components/ProductCard.jsx';
 import { useNavigate } from 'react-router-dom';
 
-
 const ProductsPage = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -43,7 +42,6 @@ const ProductsPage = () => {
 
     try {
       if (file) {
-        // Handle file upload
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onloadend = async () => {
@@ -52,7 +50,6 @@ const ProductsPage = () => {
           await sendSearchRequest(imageToSend);
         };
       } else if (imageUrl) {
-        // Handle image URL
         imageToSend = imageUrl;
         setSearchImage(imageUrl);
         await sendSearchRequest(imageToSend);
@@ -98,13 +95,13 @@ const ProductsPage = () => {
   };
 
   return (
-    
     <div className="bg-gradient-to-r from-indigo-900 via-purple-900 to-slate-900 min-h-screen">
       <div className="container mx-auto p-4 md:p-8">
         <h1 className="mb-8 text-center text-3xl font-bold text-gray-100 md:text-4xl">
           {searchMode ? 'Search Results' : 'All Products'}
         </h1>
 
+        {/* Search Section */}
         <div className="flex flex-col items-center justify-center space-y-4 mb-8">
           <div className="w-full max-w-2xl flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
             <input
@@ -118,9 +115,7 @@ const ProductsPage = () => {
                 setSearchImage(e.target.value);
               }}
             />
-            <div className='text-4xl font-bold text-center text-white'>
-              OR
-            </div>
+            <div className="text-4xl font-bold text-center text-white">OR</div>
             <div className="relative w-full md:w-auto cursor-pointer">
               <input
                 type="file"
@@ -133,19 +128,22 @@ const ProductsPage = () => {
               </div>
             </div>
           </div>
+
           <button
-              onClick={handleSearch}
-              className="cursor-pointer w-full md:w-auto rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
-              disabled={loading || (!imageUrl && !file)}
-            >
-              {loading ? 'Searching...' : 'Search'}
+            onClick={handleSearch}
+            className="cursor-pointer w-full md:w-auto rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
+            disabled={loading || (!imageUrl && !file)}
+          >
+            {loading ? 'Searching...' : 'Search'}
           </button>
+
           <button
             onClick={() => navigate('/add-product')}
             className="rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white transition hover:bg-indigo-700"
           >
             Add New Product
           </button>
+
           {searchMode && (
             <button
               onClick={handleClear}
@@ -156,25 +154,36 @@ const ProductsPage = () => {
           )}
         </div>
 
+        {/* Preview Search Image */}
         {searchImage && (
           <div className="mb-8 flex flex-col items-center justify-center p-4 rounded-lg shadow-inner bg-gray-800">
             <h2 className="text-xl font-semibold mb-4 text-gray-300">Searching with this image:</h2>
             <div className="w-48 h-48 md:w-64 md:h-64 overflow-hidden rounded-lg shadow-lg">
-              <img src={searchImage} alt="Search Query" className="w-full h-full object-cover"/>
+              <img src={searchImage} alt="Search Query" className="w-full h-full object-cover" />
             </div>
           </div>
         )}
 
+        {/* Loading Spinner */}
         {loading && (
-          <div className="flex justify-center items-center h-48">
-            <p className="text-xl font-medium text-gray-400">Loading products...Please wait for about 2 min, the backend is processing your request(render takes time to start the backend)</p>
+          <div className="flex flex-col justify-center items-center h-48 space-y-4">
+            <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-lg md:text-xl font-medium text-gray-400 text-center">
+              {searchMode
+                ? 'Searching products...'
+                : 'Loading products... Please wait while the backend starts'}
+            </p>
           </div>
         )}
+
+        {/* Error */}
         {error && (
           <div className="flex justify-center items-center h-48">
             <p className="text-xl text-red-400">{error}</p>
           </div>
         )}
+
+        {/* Product Grid */}
         {!loading && !error && products.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {products.map((product) => (
@@ -182,6 +191,8 @@ const ProductsPage = () => {
             ))}
           </div>
         )}
+
+        {/* No Results */}
         {!loading && !error && products.length === 0 && searchMode && (
           <div className="flex justify-center items-center h-48">
             <p className="text-xl font-medium text-gray-400">No similar products found.</p>
