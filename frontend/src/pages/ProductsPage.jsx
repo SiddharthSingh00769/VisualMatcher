@@ -167,7 +167,7 @@ const ProductsPage = () => {
 
         {loading && (
           <div className="flex justify-center items-center h-48">
-            <p className="text-xl font-medium text-gray-400">Loading products...</p>
+            <p className="text-xl font-medium text-gray-400">Loading products...Please wait for about 2 min, the backend is processing your request(render takes time to start the backend)</p>
           </div>
         )}
         {error && (
