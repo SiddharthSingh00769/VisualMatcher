@@ -594,7 +594,6 @@ export const getVectorFromImage = async (image) => {
       }, 0);
     };
 
-    // Define priority categories and their weights
     const priorityLevels = {
       4: ["highPriority"],
       3: [
