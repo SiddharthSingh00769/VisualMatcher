@@ -164,7 +164,6 @@ const ProductsPage = () => {
           </div>
         )}
 
-        {/* Loading Spinner */}
         {loading && (
           <div className="flex flex-col justify-center items-center h-48 space-y-4">
             <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
