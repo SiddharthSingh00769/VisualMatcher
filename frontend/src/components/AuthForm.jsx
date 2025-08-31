@@ -20,7 +20,7 @@ const AuthForm = ({ isLogin, onAuthSuccess }) => {
     setMessage('');
 
     const endpoint = isLogin ? 'login' : 'register';
-    const url = `http://localhost:5000/api/auth/${endpoint}`;
+    const url = `${import.meta.env.VITE_BACKEND_URL}/api/auth/${endpoint}`;
 
     try {
       const response = await axios.post(url, formData, {
