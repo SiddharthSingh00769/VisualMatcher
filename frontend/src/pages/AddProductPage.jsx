@@ -46,7 +46,7 @@ const AddProductPage = () => {
   };
 
   return (
-    <div className="bg-gradient-to-r from-indigo-900 to-slate-900 min-h-screen p-4 md:p-8 flex items-center justify-center text-gray-100">
+    <div className="bg-gradient-to-r from-indigo-900 via-purple-900 to-slate-900 min-h-screen p-4 md:p-8 flex items-center justify-center text-gray-100">
       <div className="w-full max-w-md rounded-xl bg-gray-800 p-8 shadow-2xl md:p-10">
         <h1 className="text-3xl font-bold text-center text-indigo-400 mb-6">Add New Product</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
