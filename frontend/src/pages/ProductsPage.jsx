@@ -124,7 +124,7 @@ const ProductsPage = () => {
                 accept="image/*"
               />
               <div className="w-full rounded-lg bg-gray-900 px-6 py-3 text-center font-semibold text-gray-100 transition hover:bg-gray-600">
-                Choose File(WEBP or JPEG)
+                Choose File(WEBP or JPEG only)
               </div>
             </div>
           </div>
