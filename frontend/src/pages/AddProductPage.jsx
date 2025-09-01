@@ -126,7 +126,7 @@ const AddProductPage = () => {
             <span className='font-bold'>OR</span>
           </div>
           <div>
-            <label htmlFor="file-upload" className="block text-sm font-medium text-gray-300">Upload Image</label>
+            <label htmlFor="file-upload" className="block text-sm font-medium text-gray-300">Upload Image(Only JPEG  and WEBP supported)</label>
             <input
               type="file"
               name="file-upload"
