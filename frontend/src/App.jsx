@@ -43,7 +43,7 @@ const App = () => {
       <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4 font-inter text-gray-800 antialiased flex-col">
         <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent border-solid rounded-full animate-spin mb-6"></div>
         <h1 className="text-center text-xl md:text-2xl font-medium">
-          Loading... Please wait while we check your authentication status.
+          Loading... Please wait the backend is setting up using render which takes around 2min.....
         </h1>
       </div>
     );
