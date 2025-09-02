@@ -155,13 +155,19 @@ visual-matcher-app/
 ```
 
 ### 🔐 Authentication Flow
+
 -User signs up or logs in
+
 -JWT token is stored in an HTTP-only cookie
+
 -Authenticated users can add products and perform visual search
 
 ### 🖼️ Usage Tips
+
 -Use JPEG or WEBP images for better similarity results
+
 -Fill in name, category, and description for each product
+
 -Search via file upload or image URL
 
 ### 🖥️ Screenshots & Demo
