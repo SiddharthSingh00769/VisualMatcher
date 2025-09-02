@@ -71,7 +71,7 @@ const ProductsPage = () => {
       setProducts(response.data.similarProducts);
     } catch (err) {
       console.error('Error fetching search results:', err);
-      setError('Failed to fetch search results. Please try again later.');
+      setError('Failed to fetch search results. Incorrect image url or unsupported image format(jpg or png).');
     } finally {
       setLoading(false);
     }

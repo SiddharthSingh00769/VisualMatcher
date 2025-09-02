@@ -64,7 +64,7 @@ const AddProductPage = () => {
       }
     } catch (err) {
       console.error('Error adding product:', err);
-      setMessage(err.response?.data?.message || 'Failed to add product. Please try again.');
+      setMessage(err.response?.data?.message || 'Failed to add product. Incorrect image url or unsupported image format(jpg or png).');
     } finally {
       setLoading(false);
     }
