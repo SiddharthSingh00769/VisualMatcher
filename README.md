@@ -11,21 +11,22 @@ A **full-stack web application** that lets users find **visually similar product
 
 ## 📑 Table of Contents
 
-- [🚀 Key Features](#-key-features)  
-- [🛠️ Technology Stack](#-technology-stack)  
-- [💻 Setup and Installation](#-setup-and-installation)  
-  - [Prerequisites](#prerequisites)  
-  - [Step 1: Clone the Repository](#step-1-clone-the-repository)  
-  - [Step 2: Backend Setup](#step-2-backend-setup)  
-  - [Step 3: Frontend Setup](#step-3-frontend-setup)  
-  - [Step 4: Seed the Database](#step-4-seed-the-database)  
-  - [Step 5: Run the Application](#step-5-run-the-application)  
-- [⚙️ Deployment](#-deployment)  
-- [📂 Project Structure](#-project-structure)  
-- [🔐 Authentication Flow](#-authentication-flow)  
-- [🖼️ Usage Tips](#-usage-tips)  
-- [🖥️ Screenshots & Demo](#-screenshots--demo)  
-- [📄 License](#-license)  
+- [🚀 Key Features](#-key-features) 
+- [🛠️ Technology Stack](#-technology-stack)
+- [🧠 Visual Search Logic](#-visual-search-logic)
+- [💻 Setup and Installation](#-setup-and-installation)
+  - [Prerequisites](#prerequisites)
+  - [Step 1: Clone the Repository](#step-1-clone-the-repository)
+  - [Step 2: Backend Setup](#step-2-backend-setup)
+  - [Step 3: Frontend Setup](#step-3-frontend-setup)
+  - [Step 4: Seed the Database](#step-4-seed-the-database)
+  - [Step 5: Run the Application](#step-5-run-the-application)
+- [⚙️ Deployment](#-deployment)
+- [📂 Project Structure](#-project-structure)
+- [🔐 Authentication Flow](#-authentication-flow)
+- [🖼️ Usage Tips](#-usage-tips)
+- [🖥️ Screenshots & Demo](#-screenshots--demo)
+- [📄 License](#-license)
 
 ---
 
@@ -62,6 +63,23 @@ A **full-stack web application** that lets users find **visually similar product
 - **Gemini API** – Convert images into feature vectors for visual matching  
 
 ---
+
+## 🧠 Visual Search Logic
+
+The core of this application's visual search functionality is an innovative, text-based approach to similarity matching. We do not use a complex, resource-heavy image embedding model. Instead, we use a more efficient and practical method that leverages the **Gemini API**.
+
+Here's how it works:
+
+1.  **Vector Generation**: When an image is submitted (either on search or when adding a new product), the backend sends it to the Gemini API with a specific prompt. The API returns a detailed text description of the image.
+2.  **Keyword Matching**: The backend then analyzes this text description using a predefined list of **keywords**. We've meticulously curated a list of product types, colors, materials, and styles.
+3.  **Priority Weighting**: The keywords are assigned a priority score. For example, keywords like `"sneakers"` get a higher priority than keywords like `"red"`. This creates a **prioritized feature vector**—a list of numbers that represents the image's key attributes.
+4.  **Cosine Similarity**: Finally, the backend uses the **cosine similarity algorithm** to compare the vector of the search image to the vectors of all products in the database. The algorithm calculates a similarity score between each pair of vectors.
+5.  **Results**: The backend returns the **top 12 products** with the highest similarity scores, which are then displayed to the user.
+
+This approach provides a functional and surprisingly accurate visual search without the need for a dedicated, paid embedding model, making it a perfect solution for a project on a free tier.
+
+---
+
 
 ## 💻 Setup and Installation
 
